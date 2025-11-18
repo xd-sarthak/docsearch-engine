@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+
+model Document {
+  id              String           @id @default(uuid())
+  title           String
+  originalContent String
+  status          DocumentStatus   @default(uploaded)
+  chunks          DocumentChunk[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+
+model DocumentChunk {
+  id          String           @id @default(uuid())
+  document    Document         @relation(fields: [documentId], references: [id])
+  documentId  String
+  content     String
+  tokenCount  Int
+  embedding   ChunkEmbedding?
+  createdAt   DateTime         @default(now())
+}
+
+model ChunkEmbedding {
+  id          String        @id @default(uuid())
+  chunk       DocumentChunk @relation(fields: [chunkId], references: [id])
+  chunkId     String        @unique
+  embedding   Float[]       // <-- changed
+  createdAt   DateTime      @default(now())
+}
+
+enum DocumentStatus {
+  uploaded
+  processing
+  embedding
+  ready
+  failed
+}
+
